@@ -1,0 +1,9 @@
+{
+  "scripts": {
+    "start": "node ratings.js"
+  },
+  "dependencies": {
+    "httpdispatcher": "1.0.0",
+    "mongodb": "^2.2.31"
+  }
+}

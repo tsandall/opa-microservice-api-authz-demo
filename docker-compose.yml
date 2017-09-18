@@ -1,0 +1,14 @@
+version: '2'
+services:
+  details:
+    image: istio/examples-bookinfo-details-v1:latest
+  ratings:
+    image: istio/examples-bookinfo-ratings-v1:latest
+  reviews:
+    image: istio/examples-bookinfo-reviews-v2:latest
+  productpage:
+    image: istio/examples-bookinfo-productpage-v1:latest
+    ports:
+    - 80:9080
+  mongodb:
+    image: istio/examples-bookinfo-mongodb:latest
