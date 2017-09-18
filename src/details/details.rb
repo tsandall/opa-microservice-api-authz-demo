@@ -16,6 +16,7 @@
 
 require 'webrick'
 require 'json'
+require 'net/http'
 
 if ARGV.length < 1 then
     puts "usage: #{$PROGRAM_NAME} port"
@@ -35,16 +36,43 @@ server.mount_proc '/health' do |req, res|
 end
 
 server.mount_proc '/details' do |req, res|
-    pathParts = req.path.split('/')
-    begin
-        id = Integer(pathParts[-1])
-        details = get_book_details(id)
-        res.body = details.to_json
+
+    opa_uri = URI.parse('http://opa:8181/v1/data/example/allow')
+    opa_conn = Net::HTTP.new(opa_uri.host, opa_uri.port)
+    opa_req = Net::HTTP::Post.new(opa_uri.request_uri)
+    opa_req.body = {
+        'input' => {
+            'method' => req.request_method,
+            'path' => req.path.tr('/', '').split('/')
+        }
+    }.to_json
+    opa_res = opa_conn.request(opa_req)
+    forbid = true
+    case opa_res
+    when Net::HTTPSuccess then
+        body = JSON.parse(opa_res.body)
+        if body.key?("result") and body["result"] then
+            forbid = false
+        end
+    end
+    if forbid then
+        res.body = {
+            'error': 'request rejected by administrative policy'
+        }.to_json
         res['Content-Type'] = 'application/json'
-    rescue
-        res.body = {'error' => 'please provide numeric product id'}.to_json
-        res['Content-Type'] = 'application/json'
-        res.status = 400
+        res.status = 403
+    else
+        pathParts = req.path.split('/')
+        begin
+            id = Integer(pathParts[-1])
+            details = get_book_details(id)
+            res.body = details.to_json
+            res['Content-Type'] = 'application/json'
+        rescue
+            res.body = {'error' => 'please provide numeric product id'}.to_json
+            res['Content-Type'] = 'application/json'
+            res.status = 400
+        end
     end
 end
 

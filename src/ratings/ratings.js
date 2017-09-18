@@ -14,6 +14,7 @@
 
 var http = require('http')
 var dispatcher = require('httpdispatcher')
+var request = require('request')
 
 var port = parseInt(process.argv[2])
 
@@ -33,7 +34,32 @@ if (process.env.SERVICE_VERSION === 'v2') {
   }
 }
 
-dispatcher.onGet(/^\/ratings\/[0-9]*/, function (req, res) {
+dispatcher.onGet(/^\/ratings\/[0-9]*/, function(req, res) {
+
+  var productIdStr = req.url.split('/').pop()
+  var productId = parseInt(productIdStr)
+
+    request.post('http://opa:8181/v1/data/example/allow',
+        {
+            json: {
+                input: {
+                    method: "GET",
+                    path: ["ratings", productIdStr]
+                }
+            }
+        }, function(opa_error, opa_response, opa_body) {
+
+            if (!opa_error && opa_response.statusCode == 200 && opa_body.result == true) {
+                return ratingsGet(req, res)
+            } else {
+                res.writeHead(403, {'Content-type': 'application/json'})
+                res.end(JSON.stringify({"error": "not authorized"}))
+            }
+
+        })
+})
+
+function ratingsGet(req, res) {
   var productIdStr = req.url.split('/').pop()
   var productId = parseInt(productIdStr)
 
@@ -111,7 +137,7 @@ dispatcher.onGet(/^\/ratings\/[0-9]*/, function (req, res) {
     res.writeHead(200, {'Content-type': 'application/json'})
     res.end(JSON.stringify(getLocalReviews(productId)))
   }
-})
+}
 
 dispatcher.onGet('/health', function (req, res) {
   res.writeHead(200, {'Content-type': 'application/json'})

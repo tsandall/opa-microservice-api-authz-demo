@@ -14,8 +14,13 @@ services:
     image: istio/examples-bookinfo-mongodb:latest
   opa:
     image: openpolicyagent/opa:0.5.8
+    volumes:
+    - ./example.rego:/example.rego
     command:
     - run
     - --server
+    - --log-level=debug
+    - --watch
+    - /example.rego
     ports:
     - 8181:8181

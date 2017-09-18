@@ -36,6 +36,7 @@ import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.client.Entity;
 
 @Path("/")
 public class LibertyRestEndpoint extends Application {
@@ -43,12 +44,12 @@ public class LibertyRestEndpoint extends Application {
     private final static Boolean ratings_enabled = Boolean.valueOf(System.getenv("ENABLE_RATINGS"));
     private final static String star_color = System.getenv("STAR_COLOR") == null ? "black" : System.getenv("STAR_COLOR");
     private final static String ratings_service = "http://ratings:9080/ratings";
-    
+
     private String getJsonResponse (String productId, int starsReviewer1, int starsReviewer2) {
     	String result = "{";
     	result += "\"id\": \"" + productId + "\",";
     	result += "\"reviews\": [";
-    	
+
     	// reviewer 1:
     	result += "{";
     	result += "  \"reviewer\": \"Reviewer1\",";
@@ -57,7 +58,7 @@ public class LibertyRestEndpoint extends Application {
     		result += ", \"rating\": {\"stars\": " + starsReviewer1 + ", \"color\": \"" + star_color + "\"}";
     	}
     	result += "},";
-    	
+
     	// reviewer 2:
     	result += "{";
     	result += "  \"reviewer\": \"Reviewer2\",";
@@ -66,13 +67,13 @@ public class LibertyRestEndpoint extends Application {
     		result += ", \"rating\": {\"stars\": " + starsReviewer2 + ", \"color\": \"" + star_color + "\"}";
     	}
     	result += "}";
-    	
+
     	result += "]";
     	result += "}";
 
     	return result;
     }
-    
+
     private JsonObject getRatings(String productId, Cookie user, String xreq, String xtraceid, String xspanid,
                                   String xparentspanid, String xsampled, String xflags, String xotspan){
       ClientBuilder cb = ClientBuilder.newBuilder();
@@ -140,6 +141,20 @@ public class LibertyRestEndpoint extends Application {
       int starsReviewer1 = -1;
       int starsReviewer2 = -1;
 
+      JsonObject opaInput = Json.createObjectBuilder()
+          .add("input", Json.createObjectBuilder()
+                .add("method", "GET")
+                .add("path", Json.createArrayBuilder()
+                    .add("reviews")
+                    .add(Integer.toString(productId))))
+          .build();
+
+      if (!isAllowed(opaInput)) {
+        JsonObject forbidden = Json.createObjectBuilder()
+            .add("error", "authorization denied").build();
+        return Response.status(403).type(MediaType.APPLICATION_JSON).entity(forbidden).build();
+      }
+
       if (ratings_enabled) {
         JsonObject ratingsResponse = getRatings(Integer.toString(productId), user, xreq, xtraceid, xspanid, xparentspanid, xsampled, xflags, xotspan);
         if (ratingsResponse != null) {
@@ -153,9 +168,27 @@ public class LibertyRestEndpoint extends Application {
             }
           }
         }
-      } 
+      }
 
       String jsonResStr = getJsonResponse(Integer.toString(productId), starsReviewer1, starsReviewer2);
       return Response.ok().type(MediaType.APPLICATION_JSON).entity(jsonResStr).build();
+    }
+
+    public boolean isAllowed(JsonObject input) {
+      ClientBuilder cb = ClientBuilder.newBuilder();
+      Client client = cb.build();
+      WebTarget opaTarget = client.target("http://opa:8181/v1/data/example/allow");
+      Response response = opaTarget.request(MediaType.APPLICATION_JSON).post(Entity.json(input));
+      int statusCode = response.getStatusInfo().getStatusCode();
+      boolean allowed = false;
+      if (statusCode == Response.Status.OK.getStatusCode()) {
+        StringReader stringReader = new StringReader(response.readEntity(String.class));
+        try (JsonReader jsonReader = Json.createReader(stringReader)) {
+            JsonObject j = jsonReader.readObject();
+            return j.getBoolean("result", false);
+        }
+      }
+      response.close();
+      return allowed;
     }
 }

@@ -220,7 +220,7 @@ def getProductReviews(product_id, headers):
         except:
             res = None
         if res and res.status_code == 200:
-            return (200, res.json())        
+            return (200, res.json())
     status = (res.status_code if res != None and res.status_code else 500)
     return (status, {'error': 'Sorry, product reviews are currently unavailable for this book.'})
 
@@ -232,7 +232,7 @@ def getProductRatings(product_id, headers):
     except:
         res = None
     if res and res.status_code == 200:
-        return (200, res.json())        
+        return (200, res.json())
     else:
         status = (res.status_code if res != None and res.status_code else 500)
         return (status, {'error': 'Sorry, product ratings are currently unavailable for this book.'})
@@ -245,14 +245,36 @@ class Writer(object):
         self.file.write(data)
         self.file.flush()
 
+
+opa_url = "http://opa:8181/v1/data/example/allow"
+from urlparse import urlparse, parse_qs
+
+
+def check_request(*args, **kwargs):
+    parsed = urlparse(request.url)
+    body = {
+        "input": {
+            "method": request.method,
+            "query": parse_qs(parsed.query),
+            "path": parsed.path.strip('/').split('/'),
+            "body": request.get_json(silent=True)
+        }
+    }
+    res = requests.post(opa_url, timeout=1.0, data=json.dumps(body), headers={"Content-Type": "application/json"})
+    body = res.json()
+    if res.status_code != 200:
+        return (body, 500, {"Content-Type": "application/json"})
+    allowed = body.get("result", False)
+    if not allowed:
+        return (json.dumps({"error": "request rejected by administrative policy"}), 403, {"Content-Type": "application/json"})
+
+
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         print "usage: %s port" % (sys.argv[0])
         sys.exit(-1)
 
     p = int(sys.argv[1])
-    sys.stderr = Writer('stderr.log')
-    sys.stdout = Writer('stdout.log')
     print "start at port %s" % (p)
-    app.run(host='0.0.0.0', port=p, debug = True, threaded=True)
-
+    app.before_request(check_request)
+    app.run(host='0.0.0.0', port=p, threaded=True)
