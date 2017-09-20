@@ -17,6 +17,7 @@ package application.rest;
 
 import java.io.StringReader;
 import javax.json.Json;
+import javax.json.JsonValue;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonReader;
@@ -141,12 +142,18 @@ public class LibertyRestEndpoint extends Application {
       int starsReviewer1 = -1;
       int starsReviewer2 = -1;
 
+      JsonObjectBuilder input = null;
+
+      if (user!=null) {
+          input = Json.createObjectBuilder().add("user", user.getValue());
+      } else {
+          input = Json.createObjectBuilder().add("user", JsonValue.NULL);
+      }
+
+      input = input.add("method", "GET").add("path", Json.createArrayBuilder().add("reviews").add(Integer.toString(productId)));
+
       JsonObject opaInput = Json.createObjectBuilder()
-          .add("input", Json.createObjectBuilder()
-                .add("method", "GET")
-                .add("path", Json.createArrayBuilder()
-                    .add("reviews")
-                    .add(Integer.toString(productId))))
+          .add("input", input)
           .build();
 
       if (!isAllowed(opaInput)) {

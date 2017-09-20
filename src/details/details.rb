@@ -40,10 +40,16 @@ server.mount_proc '/details' do |req, res|
     opa_uri = URI.parse('http://opa:8181/v1/data/example/allow')
     opa_conn = Net::HTTP.new(opa_uri.host, opa_uri.port)
     opa_req = Net::HTTP::Post.new(opa_uri.request_uri)
+    user = req.cookies.find { |c| c.name == 'user' }
+    user_id = nil
+    if not user.nil? then
+        user_id = user.value
+    end
     opa_req.body = {
         'input' => {
             'method' => req.request_method,
-            'path' => req.path.tr('/', '').split('/')
+            'path' => req.path.tr('/', '').split('/'),
+            'user' => user_id
         }
     }.to_json
     opa_res = opa_conn.request(opa_req)

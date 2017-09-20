@@ -34,7 +34,24 @@ if (process.env.SERVICE_VERSION === 'v2') {
   }
 }
 
+
+function parseCookies (request) {
+    var list = {},
+        rc = request.headers.cookie;
+
+    rc && rc.split(';').forEach(function( cookie ) {
+        var parts = cookie.split('=');
+        list[parts.shift().trim()] = decodeURI(parts.join('='));
+    });
+
+    return list;
+}
+
+
 dispatcher.onGet(/^\/ratings\/[0-9]*/, function(req, res) {
+
+
+  var cookies = parseCookies(req)
 
   var productIdStr = req.url.split('/').pop()
   var productId = parseInt(productIdStr)
@@ -43,6 +60,7 @@ dispatcher.onGet(/^\/ratings\/[0-9]*/, function(req, res) {
         {
             json: {
                 input: {
+					user: cookies.user,
                     method: "GET",
                     path: ["ratings", productIdStr]
                 }

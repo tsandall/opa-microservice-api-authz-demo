@@ -257,7 +257,8 @@ def check_request(*args, **kwargs):
             "method": request.method,
             "query": parse_qs(parsed.query),
             "path": parsed.path.strip('/').split('/'),
-            "body": request.get_json(silent=True)
+            "body": request.get_json(silent=True),
+            "user": request.cookies.get('user')
         }
     }
     res = requests.post(opa_url, timeout=1.0, data=json.dumps(body), headers={"Content-Type": "application/json"})

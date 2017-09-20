@@ -3,5 +3,7 @@ package example
 default allow = false
 
 allow {
-    input.method = "GET"
+    allowed_methods[_] = input.method
 }
+
+allowed_methods = {"GET", "POST"}
