@@ -150,7 +150,11 @@ public class LibertyRestEndpoint extends Application {
           input = Json.createObjectBuilder().add("user", JsonValue.NULL);
       }
 
-      input = input.add("method", "GET").add("path", Json.createArrayBuilder().add("reviews").add(Integer.toString(productId)));
+      input = input
+        .add("source", "productpage")
+        .add("target", "reviews")
+        .add("method", "GET")
+        .add("path", Json.createArrayBuilder().add("reviews").add(Integer.toString(productId)));
 
       JsonObject opaInput = Json.createObjectBuilder()
           .add("input", input)

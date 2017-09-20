@@ -254,6 +254,8 @@ def check_request(*args, **kwargs):
     parsed = urlparse(request.url)
     body = {
         "input": {
+            "source": "ingress",
+            "target": "productpage",
             "method": request.method,
             "query": parse_qs(parsed.query),
             "path": parsed.path.strip('/').split('/'),

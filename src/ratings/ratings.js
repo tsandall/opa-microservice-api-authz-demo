@@ -60,6 +60,8 @@ dispatcher.onGet(/^\/ratings\/[0-9]*/, function(req, res) {
         {
             json: {
                 input: {
+                    source: "reviews",
+                    target: "ratings",
 					user: cookies.user,
                     method: "GET",
                     path: ["ratings", productIdStr]

@@ -47,6 +47,8 @@ server.mount_proc '/details' do |req, res|
     end
     opa_req.body = {
         'input' => {
+            'source' => 'productpage',
+            'target' => 'details',
             'method' => req.request_method,
             'path' => req.path.tr('/', '').split('/'),
             'user' => user_id
