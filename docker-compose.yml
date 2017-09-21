@@ -10,17 +10,15 @@ services:
     image: istio/examples-bookinfo-productpage-v1:latest
     ports:
     - 80:9080
-  mongodb:
-    image: istio/examples-bookinfo-mongodb:latest
   opa:
-    image: openpolicyagent/opa:0.5.8
+    image: openpolicyagent/opa:0.5.9-dev
     volumes:
-    - ./example.rego:/example.rego
+    - ./policies:/policies
     command:
     - run
     - --server
     - --log-level=debug
     - --watch
-    - /example.rego
+    - /policies
     ports:
     - 8181:8181

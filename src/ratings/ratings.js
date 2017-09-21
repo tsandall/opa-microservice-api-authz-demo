@@ -48,7 +48,7 @@ function parseCookies (request) {
 }
 
 
-dispatcher.onGet(/^\/ratings\/[0-9]*/, function(req, res) {
+dispatcher.onGet(/^\/ratings\/[.+]*/, function(req, res) {
 
 
   var cookies = parseCookies(req)
@@ -80,83 +80,9 @@ dispatcher.onGet(/^\/ratings\/[0-9]*/, function(req, res) {
 })
 
 function ratingsGet(req, res) {
-  var productIdStr = req.url.split('/').pop()
-  var productId = parseInt(productIdStr)
-
-  if (Number.isNaN(productId)) {
-    res.writeHead(400, {'Content-type': 'application/json'})
-    res.end(JSON.stringify({error: 'please provide numeric product ID'}))
-  } else if (process.env.SERVICE_VERSION === 'v2') {
-    var firstRating = 0
-    var secondRating = 0
-
-    if (process.env.DB_TYPE === 'mysql') {
-      var connection = mysql.createConnection({
-        host: hostName,
-        port: portNumber,
-        user: username,
-        password: password,
-        database: 'test'
-      })
-
-      connection.connect()
-      connection.query('SELECT Rating FROM ratings', function (err, results, fields) {
-        if (err) {
-          res.writeHead(500, {'Content-type': 'application/json'})
-          res.end(JSON.stringify({error: 'could not connect to ratings database'}))
-        } else {
-          if (results[0]) {
-            firstRating = results[0].Rating
-          }
-          if (results[1]) {
-            secondRating = results[1].Rating
-          }
-          var result = {
-            id: productId,
-            ratings: {
-              Reviewer1: firstRating,
-              Reviewer2: secondRating
-            }
-          }
-          res.writeHead(200, {'Content-type': 'application/json'})
-          res.end(JSON.stringify(result))
-        }
-      })
-      // close connection in any case:
-      connection.end()
-    } else {
-      MongoClient.connect(url, function (err, db) {
-        if (err) {
-          res.writeHead(500, {'Content-type': 'application/json'})
-          res.end(JSON.stringify({error: 'could not connect to ratings database'}))
-        } else {
-          db.collection('ratings').find({}).toArray(function (err, data) {
-            if (err) {
-              res.writeHead(500, {'Content-type': 'application/json'})
-              res.end(JSON.stringify({error: 'could not load ratings from database'}))
-            } else {
-              firstRating = data[0].rating
-              secondRating = data[1].rating
-              var result = {
-                id: productId,
-                ratings: {
-                  Reviewer1: firstRating,
-                  Reviewer2: secondRating
-                }
-              }
-              res.writeHead(200, {'Content-type': 'application/json'})
-              res.end(JSON.stringify(result))
-            }
-            // close DB once done:
-            db.close()
-          })
-        }
-      })
-    }
-  } else {
-    res.writeHead(200, {'Content-type': 'application/json'})
-    res.end(JSON.stringify(getLocalReviews(productId)))
-  }
+  var productId = req.url.split('/').pop()
+  res.writeHead(200, {'Content-type': 'application/json'})
+  res.end(JSON.stringify(getLocalReviews(productId)))
 }
 
 dispatcher.onGet('/health', function (req, res) {
@@ -168,8 +94,8 @@ function getLocalReviews (productId) {
   return {
     id: productId,
     ratings: {
-      'Reviewer1': 5,
-      'Reviewer2': 4
+      'Reviewer1': 1,
+      'Reviewer2': 5
     }
   }
 }

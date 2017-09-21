@@ -53,8 +53,8 @@ public class LibertyRestEndpoint extends Application {
 
     	// reviewer 1:
     	result += "{";
-    	result += "  \"reviewer\": \"Reviewer1\",";
-    	result += "  \"text\": \"An extremely entertaining play by Shakespeare. The slapstick humour is refreshing!\"";
+    	result += "  \"reviewer\": \"Alice\",";
+    	result += "  \"text\": \"Bob doesn't make mistakes. Only happy accidents.\"";
     	if (starsReviewer1 != -1) {
     		result += ", \"rating\": {\"stars\": " + starsReviewer1 + ", \"color\": \"" + star_color + "\"}";
     	}
@@ -62,8 +62,8 @@ public class LibertyRestEndpoint extends Application {
 
     	// reviewer 2:
     	result += "{";
-    	result += "  \"reviewer\": \"Reviewer2\",";
-    	result += "  \"text\": \"Absolutely fun and entertaining. The play lacks thematic depth when compared to other plays by Shakespeare.\"";
+    	result += "  \"reviewer\": \"Janet\",";
+    	result += "  \"text\": \"Bob's great at building happy little clouds.\"";
     	if (starsReviewer1 != -1) {
     		result += ", \"rating\": {\"stars\": " + starsReviewer2 + ", \"color\": \"" + star_color + "\"}";
     	}
@@ -130,7 +130,7 @@ public class LibertyRestEndpoint extends Application {
 
     @GET
     @Path("/reviews/{productId}")
-    public Response bookReviewsById(@PathParam("productId") int productId,
+    public Response bookReviewsById(@PathParam("productId") String productId,
                                     @CookieParam("user") Cookie user,
                                     @HeaderParam("x-request-id") String xreq,
                                     @HeaderParam("x-b3-traceid") String xtraceid,
@@ -151,10 +151,10 @@ public class LibertyRestEndpoint extends Application {
       }
 
       input = input
-        .add("source", "productpage")
+        .add("source", "landing_page")
         .add("target", "reviews")
         .add("method", "GET")
-        .add("path", Json.createArrayBuilder().add("reviews").add(Integer.toString(productId)));
+        .add("path", Json.createArrayBuilder().add("reviews").add(productId));
 
       JsonObject opaInput = Json.createObjectBuilder()
           .add("input", input)
@@ -167,7 +167,7 @@ public class LibertyRestEndpoint extends Application {
       }
 
       if (ratings_enabled) {
-        JsonObject ratingsResponse = getRatings(Integer.toString(productId), user, xreq, xtraceid, xspanid, xparentspanid, xsampled, xflags, xotspan);
+        JsonObject ratingsResponse = getRatings(productId, user, xreq, xtraceid, xspanid, xparentspanid, xsampled, xflags, xotspan);
         if (ratingsResponse != null) {
           if (ratingsResponse.containsKey("ratings")) {
             JsonObject ratings = ratingsResponse.getJsonObject("ratings");
@@ -181,7 +181,7 @@ public class LibertyRestEndpoint extends Application {
         }
       }
 
-      String jsonResStr = getJsonResponse(Integer.toString(productId), starsReviewer1, starsReviewer2);
+      String jsonResStr = getJsonResponse(productId, starsReviewer1, starsReviewer2);
       return Response.ok().type(MediaType.APPLICATION_JSON).entity(jsonResStr).build();
     }
 

@@ -36,34 +36,8 @@ server.mount_proc '/health' do |req, res|
 end
 
 server.mount_proc '/details' do |req, res|
-
-    opa_uri = URI.parse('http://opa:8181/v1/data/example/allow')
-    opa_conn = Net::HTTP.new(opa_uri.host, opa_uri.port)
-    opa_req = Net::HTTP::Post.new(opa_uri.request_uri)
-    user = req.cookies.find { |c| c.name == 'user' }
-    user_id = nil
-    if not user.nil? then
-        user_id = user.value
-    end
-    opa_req.body = {
-        'input' => {
-            'source' => 'productpage',
-            'target' => 'details',
-            'method' => req.request_method,
-            'path' => req.path.tr('/', '').split('/'),
-            'user' => user_id
-        }
-    }.to_json
-    opa_res = opa_conn.request(opa_req)
-    forbid = true
-    case opa_res
-    when Net::HTTPSuccess then
-        body = JSON.parse(opa_res.body)
-        if body.key?("result") and body["result"] then
-            forbid = false
-        end
-    end
-    if forbid then
+    allowed = is_allowed('http://opa:8181/v1/data/example/allow', req)
+    if not allowed then
         res.body = {
             'error': 'request rejected by administrative policy'
         }.to_json
@@ -72,30 +46,92 @@ server.mount_proc '/details' do |req, res|
     else
         pathParts = req.path.split('/')
         begin
-            id = Integer(pathParts[-1])
+            id = pathParts[-1]
             details = get_book_details(id)
+            names = get_obfuscate_set('http://opa:8181/v1/data/example/obfuscate', req)
+            names.each { |n| details[n] = "***********" }
             res.body = details.to_json
             res['Content-Type'] = 'application/json'
         rescue
-            res.body = {'error' => 'please provide numeric product id'}.to_json
+            res.body = {'error' => 'please provide employee id'}.to_json
             res['Content-Type'] = 'application/json'
             res.status = 400
         end
     end
 end
 
+def is_allowed(opa_query, req)
+    opa_uri = URI.parse(opa_query)
+    opa_conn = Net::HTTP.new(opa_uri.host, opa_uri.port)
+    opa_req = Net::HTTP::Post.new(opa_uri.request_uri)
+    user = req.cookies.find { |c| c.name == 'user' }
+    user_id = nil
+    if not user.nil? then
+        user_id = user.value
+    end
+    opa_input = {
+            'source' => 'landing_page',
+            'target' => 'details',
+            'method' => req.request_method,
+            'path' => req.path.gsub(/(^\/+|\/+$)/, "").split('/'),
+            'user' => user_id
+        }
+    opa_req.body = {
+        'input' => opa_input
+    }.to_json
+    opa_res = opa_conn.request(opa_req)
+    forbid = true
+    case opa_res
+    when Net::HTTPSuccess then
+        body = JSON.parse(opa_res.body)
+        if body.key?("result") and body["result"] then
+            return true
+        end
+    end
+    return false
+end
+
+def get_obfuscate_set(opa_query, req)
+    opa_uri = URI.parse(opa_query)
+    opa_conn = Net::HTTP.new(opa_uri.host, opa_uri.port)
+    opa_req = Net::HTTP::Post.new(opa_uri.request_uri)
+    user = req.cookies.find { |c| c.name == 'user' }
+    user_id = nil
+    if not user.nil? then
+        user_id = user.value
+    end
+    opa_input = {
+            'source' => 'landing_page',
+            'target' => 'details',
+            'method' => req.request_method,
+            'path' => req.path.gsub(/(^\/+|\/+$)/, "").split('/'),
+            'user' => user_id
+        }
+    opa_req.body = {
+        'input' => opa_input
+    }.to_json
+    opa_res = opa_conn.request(opa_req)
+    forbid = true
+    case opa_res
+    when Net::HTTPSuccess then
+        body = JSON.parse(opa_res.body)
+        if body.key?("result") then
+            return body["result"]
+        end
+    end
+    return []
+end
+
 # TODO: provide details on different books.
 def get_book_details(id)
     return {
         'id' => id,
-        'author': 'William Shakespeare',
-        'year': 1595,
-        'type' => 'paperback',
-        'pages' => 200,
-        'publisher' => 'PublisherA',
-        'language' => 'English',
-        'ISBN-10' => '1234567890',
-        'ISBN-13' => '123-1234567890'
+        'name' => 'Bob Ross',
+        'birthdate' => 'October 29, 1942',
+        'position' => 'Cloud Engineer',
+        'tshirt' => 'Medium',
+        'manager' => 'Janet',
+        'ssn' => 1234567890,
     }
 end
 

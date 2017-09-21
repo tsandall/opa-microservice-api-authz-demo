@@ -33,7 +33,7 @@ except ImportError:
     import httplib as http_client
 http_client.HTTPConnection.debuglevel = 1
 
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='/static')
 logging.basicConfig(filename='microservice.log',filemode='w',level=logging.DEBUG)
 requests_log = logging.getLogger("requests.packages.urllib3")
 requests_log.setLevel(logging.DEBUG)
@@ -62,18 +62,6 @@ reviews = {
     "children" : [ratings]
 }
 
-productpage = {
-    "name" : "http://productpage:9080",
-    "endpoint" : "details",
-    "children" : [details, reviews]
-}
-
-service_dict = {
-    "productpage" : productpage,
-    "details" : details,
-    "reviews" : reviews,
-}
-
 def getForwardHeaders(request):
     headers = {}
 
@@ -98,19 +86,12 @@ def getForwardHeaders(request):
 
     return headers
 
-
 # The UI:
 @app.route('/')
 @app.route('/index.html')
 def index():
     """ Display productpage with normal user and test user buttons"""
-    global productpage
-
-    table = json2html.convert(json = json.dumps(productpage),
-                              table_attributes="class=\"table table-condensed table-bordered table-hover\"")
-
-    return render_template('index.html', serviceTable=table)
-
+    return redirect(url_for('front'))
 
 @app.route('/health')
 def health():
@@ -132,9 +113,9 @@ def logout():
     return response
 
 
-@app.route('/productpage')
+@app.route('/bob')
 def front():
-    product_id = 0 # TODO: replace default value
+    product_id = "bob" # TODO: replace default value
     headers = getForwardHeaders(request)
     user = request.cookies.get("user", "")
     product = getProduct(product_id)
@@ -150,51 +131,18 @@ def front():
         user=user)
 
 
-# The API:
-@app.route('/api/v1/products')
-def productsRoute():
-    return json.dumps(getProducts()), 200, {'Content-Type': 'application/json'}
-
-
-@app.route('/api/v1/products/<product_id>')
-def productRoute(product_id):
-    headers = getForwardHeaders(request)
-    (status, details) = getProductDetails(product_id, headers)
-    return json.dumps(details), status, {'Content-Type': 'application/json'}
-
-
-@app.route('/api/v1/products/<product_id>/reviews')
-def reviewsRoute(product_id):
-    headers = getForwardHeaders(request)
-    (status, reviews) = getProductReviews(product_id, headers)
-    return json.dumps(reviews), status, {'Content-Type': 'application/json'}
-
-
-@app.route('/api/v1/products/<product_id>/ratings')
-def ratingsRoute(product_id):
-    headers = getForwardHeaders(request)
-    (status, ratings) = getProductRatings(product_id, headers)
-    return json.dumps(ratings), status, {'Content-Type': 'application/json'}
-
-
-
 # Data providers:
 def getProducts():
-    return [
-        {
-            'id': 0,
-            'title': 'The Comedy of Errors',
-            'descriptionHtml': '<a href="https://en.wikipedia.org/wiki/The_Comedy_of_Errors">Wikipedia Summary</a>: The Comedy of Errors is one of <b>William Shakespeare\'s</b> early plays. It is his shortest and one of his most farcical comedies, with a major part of the humour coming from slapstick and mistaken identity, in addition to puns and word play.'
-        }
-    ]
+    return {"bob":
+            {'id': 0,
+            'title': 'Bob',
+            'descriptionHtml': '<img src="/static/bob.jpg" /> <br><br> "There\'s nothing wrong with having a tree as a friend."',
+        }}
 
 
 def getProduct(product_id):
     products = getProducts()
-    if product_id + 1 > len(products):
-        return None
-    else:
-        return products[product_id]
+    return products[product_id]
 
 
 def getProductDetails(product_id, headers):
@@ -207,7 +155,7 @@ def getProductDetails(product_id, headers):
         return (200, res.json())
     else:
         status = (res.status_code if res != None and res.status_code else 500)
-        return (status, {'error': 'Sorry, product details are currently unavailable for this book.'})
+        return (status, {'error': 'Sorry, details are currently unavailable for this employee'})
 
 
 def getProductReviews(product_id, headers):
@@ -222,7 +170,7 @@ def getProductReviews(product_id, headers):
         if res and res.status_code == 200:
             return (200, res.json())
     status = (res.status_code if res != None and res.status_code else 500)
-    return (status, {'error': 'Sorry, product reviews are currently unavailable for this book.'})
+    return (status, {'error': 'Sorry, performance reviews are currently unavailable for this employee.'})
 
 
 def getProductRatings(product_id, headers):
@@ -235,7 +183,7 @@ def getProductRatings(product_id, headers):
         return (200, res.json())
     else:
         status = (res.status_code if res != None and res.status_code else 500)
-        return (status, {'error': 'Sorry, product ratings are currently unavailable for this book.'})
+        return (status, {'error': 'Sorry, ratings are currently unavailable for this empleoyee.'})
 
 class Writer(object):
     def __init__(self, filename):
@@ -254,8 +202,8 @@ def check_request(*args, **kwargs):
     parsed = urlparse(request.url)
     body = {
         "input": {
-            "source": "ingress",
-            "target": "productpage",
+            "external": True,
+            "target": "landing_page",
             "method": request.method,
             "query": parse_qs(parsed.query),
             "path": parsed.path.strip('/').split('/'),
@@ -263,11 +211,16 @@ def check_request(*args, **kwargs):
             "user": request.cookies.get('user')
         }
     }
+
     res = requests.post(opa_url, timeout=1.0, data=json.dumps(body), headers={"Content-Type": "application/json"})
+
     body = res.json()
+
     if res.status_code != 200:
         return (body, 500, {"Content-Type": "application/json"})
+
     allowed = body.get("result", False)
+
     if not allowed:
         return (json.dumps({"error": "request rejected by administrative policy"}), 403, {"Content-Type": "application/json"})
 
