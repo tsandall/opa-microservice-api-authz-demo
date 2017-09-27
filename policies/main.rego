@@ -9,7 +9,7 @@ allow {
     service_graph.allow
 }
 
-#obfuscate = ["ssn"] {
+#pii = ["ssn"] {
 #    input.path = ["details", user]
 #    input.user != user
 #    not org_chart.is_hr

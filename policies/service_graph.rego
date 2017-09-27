@@ -5,7 +5,7 @@ service_graph = {
     "reviews": ["ratings"],
 }
 
-default allow = false
+default allow = true
 
 #allow {
 #    input.external = true

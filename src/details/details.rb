@@ -48,7 +48,7 @@ server.mount_proc '/details' do |req, res|
         begin
             id = pathParts[-1]
             details = get_book_details(id)
-            names = get_obfuscate_set('http://opa:8181/v1/data/example/obfuscate', req)
+            names = get_obfuscate_set('http://opa:8181/v1/data/example/pii', req)
             names.each { |n| details[n] = "***********" }
             res.body = details.to_json
             res['Content-Type'] = 'application/json'
