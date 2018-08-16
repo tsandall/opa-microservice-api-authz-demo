@@ -33,7 +33,7 @@ popd
 
 pushd $SCRIPTDIR/reviews
   #java build the app.
-  docker run --rm -v `pwd`:/usr/bin/app:rw niaquinto/gradle clean build
+  docker run --rm -v `pwd`:/usr/bin/app:rw -w /usr/bin/app gradle:4.8.1 gradle clean build
   pushd reviews-wlpcfg
     #with ratings black stars
     docker build -t istio/examples-bookinfo-reviews-v2:${VERSION} --build-arg service_version=v2 --build-arg enable_ratings=true .
