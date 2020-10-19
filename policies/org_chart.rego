@@ -1,37 +1,47 @@
 package org_chart
 
 employees = {
-    "bob": {"manager": "janet", "roles": ["engineering"]},
+    "dracula": {"manager": "janet", "roles": ["engineering"]},
     "alice": {"manager": "janet", "roles": ["engineering"]},
     "janet": {"roles": ["engineering"]},
     "ken": {"roles": ["hr"]},
 }
 
-# Allow access to non-sensitive APIs.
-allow { not is_sensitive_api }
+default allow = false
 
-is_sensitive_api {
-    input.path[0] = "reviews"
-}
-
-# Allow users access to sensitive APIs serving their own data.
 allow {
-    input.path = ["reviews", user]
-    input.user = user
+    not is_private_resource
 }
 
-# Allow managers access to sensitive APIs serving their reports' data.
 allow {
-    input.path = ["reviews", user]
-    input.user = employees[user].manager
+    read_own_reviews
 }
 
-# Allow HR to access all APIs.
+allow {
+    read_subordinate_reviews
+}
+
 allow {
     is_hr
 }
 
+is_private_resource {
+    input.path[0] == "reviews"
+}
+
+read_own_reviews {
+    user := input.user
+    input.path == ["reviews", user]
+}
+
+read_subordinate_reviews {
+    some user
+    manager := employees[user].manager
+    input.user == manager
+    input.path == ["reviews", user]
+}
+
 is_hr {
-    input.user = user
+    user := input.user
     employees[user].roles[_] = "hr"
 }

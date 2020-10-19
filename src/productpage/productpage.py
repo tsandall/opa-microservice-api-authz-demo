@@ -113,9 +113,9 @@ def logout():
     return response
 
 
-@app.route('/bob')
+@app.route('/dracula')
 def front():
-    product_id = "bob" # TODO: replace default value
+    product_id = "dracula" # TODO: replace default value
     headers = getForwardHeaders(request)
     user = request.cookies.get("user", "")
     product = getProduct(product_id)
@@ -133,10 +133,10 @@ def front():
 
 # Data providers:
 def getProducts():
-    return {"bob":
+    return {"dracula":
             {'id': 0,
-            'title': 'Bob',
-            'descriptionHtml': '<img src="/static/bob.jpg" /> <br><br> "There\'s nothing wrong with having a tree as a friend."',
+            'title': 'Dracula',
+            'descriptionHtml': '<img src="/static/drac.jpg" /> <br><br> "I vant to exec into your pod."',
         }}
 
 

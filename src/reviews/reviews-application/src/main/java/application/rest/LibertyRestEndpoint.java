@@ -54,7 +54,7 @@ public class LibertyRestEndpoint extends Application {
     	// reviewer 1:
     	result += "{";
     	result += "  \"reviewer\": \"Alice\",";
-    	result += "  \"text\": \"Bob doesn't make mistakes. Only happy accidents.\"";
+    	result += "  \"text\": \"He drained all the pods out of my cluster!!\"";
     	if (starsReviewer1 != -1) {
     		result += ", \"rating\": {\"stars\": " + starsReviewer1 + ", \"color\": \"" + star_color + "\"}";
     	}
@@ -63,7 +63,7 @@ public class LibertyRestEndpoint extends Application {
     	// reviewer 2:
     	result += "{";
     	result += "  \"reviewer\": \"Janet\",";
-    	result += "  \"text\": \"Bob's great at building happy little clouds.\"";
+    	result += "  \"text\": \"Drac is great at commanding an army of minions.\"";
     	if (starsReviewer1 != -1) {
     		result += ", \"rating\": {\"stars\": " + starsReviewer2 + ", \"color\": \"" + star_color + "\"}";
     	}

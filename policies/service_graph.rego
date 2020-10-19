@@ -8,11 +8,11 @@ service_graph = {
 default allow = true
 
 allow {
-    input.external = true
-    input.target = "landing_page"
+    input.external == true
+    input.target == "landing_page"
 }
 
 allow {
-    allowed_targets = service_graph[input.source]
-    input.target = allowed_targets[_]
+    allowed_targets := service_graph[input.source]
+    input.target == allowed_targets[_]
 }

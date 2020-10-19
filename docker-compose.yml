@@ -11,14 +11,15 @@ services:
     ports:
     - 80:9080
   opa:
-    image: openpolicyagent/opa:0.9.1
+    image: openpolicyagent/opa:0.24.0
     volumes:
     - ./policies:/policies
     command:
     - run
     - --server
-    - --log-level=debug
     - --watch
+    - --log-format=json-pretty
+    - --set=decision_logs.console=true
     - /policies
     ports:
     - 8181:8181

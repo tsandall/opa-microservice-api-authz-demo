@@ -126,9 +126,9 @@ end
 def get_book_details(id)
     return {
         'id' => id,
-        'name' => 'Bob Ross',
-        'birthdate' => 'October 29, 1942',
-        'position' => 'Cloud Engineer',
+        'name' => 'Mr. De Ville',
+        'birthdate' => '1431 AD',
+        'position' => 'Count',
         'tshirt' => 'Medium',
         'manager' => 'Janet',
         'ssn' => 1234567890,
